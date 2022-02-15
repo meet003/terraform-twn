@@ -1,5 +1,7 @@
 provider "aws" {
     region = "us-east-2"
+    access_key = "AKIAUTAVO7YA3RJ4DWGY"
+    secret_key = "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"
 }
 
 resource "aws_vpc" "myapp-vpc" {
@@ -24,6 +26,6 @@ module "myapp-server"{
     my_ip = var.my_ip
     env_prefix = var.env_prefix
     instance_type = var.instance_type
-    subnet_id = module.myapp-subnet.subnet
+    subnet_id = module.myapp-subnet.subnet.id
     avail_zone = var.avail_zone
 } 
