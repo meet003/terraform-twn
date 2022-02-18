@@ -1,52 +1,31 @@
 provider "aws" {
-    region = "eu-west-3"
-}
-
-variable cidr_blocks {
-    description = "cidr blocks and name tags for vpc and subnets"
-    type = list(object({
-        cidr_block = string
-        name = string
-    }))
-}
-
-variable avail_zone {
-    default = "eu-west-3a"
+    region = "us-east-2"
+    access_key = "AKIAUTAVO7YA3RJ4DWGY"
+    secret_key = "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"
 }
 
 resource "aws_vpc" "myapp-vpc" {
-    cidr_block = var.cidr_blocks[0].cidr_block
+    cidr_block = var.vpc_cidr_block
     tags = {
-        Name = var.cidr_blocks[0].name
+        Name = "${var.env_prefix}-vpc"
     }
 }
 
-resource "aws_subnet" "myapp-subnet-1" {
+module "myapp-subnet" {
+  source = "./modules/subnet"
+  subnet_cidr_block = var.subnet_cidr_block
+  avail_zone = var.avail_zone
+  env_prefix = var.env_prefix
+  vpc_id = aws_vpc.myapp-vpc.id
+  default_route_table_id = aws_vpc.myapp-vpc.default_route_table_id
+}
+
+module "myapp-server"{
+    source = "./modules/webserver"
     vpc_id = aws_vpc.myapp-vpc.id
-    cidr_block = var.cidr_blocks[1].cidr_block
-    availability_zone = var.avail_zone
-    tags = {
-        Name = var.cidr_blocks[1].name
-    }
-}
-
-output "dev-vpc-id" {
-    value = aws_vpc.development-vpc.id
-}
-
-output "dev-subnet-id" {
-    value = aws_subnet.dev-subnet-1.id
-}
-
-data "aws_vpc" "existing_vpc" {
-    default = true
-}
-
-resource "aws_subnet" "dev-subnet-2" {
-    vpc_id = data.aws_vpc.existing_vpc.id
-    cidr_block = "172.31.48.0/20"
-    availability_zone = "eu-west-3a"
-    tags = {
-        Name = "subnet-2-default"
-    }
-}
+    my_ip = var.my_ip
+    env_prefix = var.env_prefix
+    instance_type = var.instance_type
+    subnet_id = module.myapp-subnet.subnet.id
+    avail_zone = var.avail_zone
+} 
